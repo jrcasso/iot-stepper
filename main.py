@@ -77,21 +77,23 @@ def constant_move():
   enable_pin.value(1)
 
   # Initial direction set to forward
-  dir_pin.value(1)
+  dir_pin.value(int(input("Input direction: ")))
+  delay = float(input("Input step delay: "))
   while True:
     toggle_switch_activated = switch_active(enable_switch_pin)
     if toggle_switch_activated:
       if enable_pin.value() == 0:
-        print("Disabling motor")
+        print("Disabling motor and changing direction")
         tim.deinit()
         enable_pin.value(1)
+        dir_pin.value(not dir_pin.value())
 
         utime.sleep(2)
         count = 0
       else:
         # set_direction(1)
         print("Activating motor")
-        frequency = 1000000.0/1400.0
+        frequency = 1000000.0/delay
         enable_pin.value(0)
         tim.init(freq=int(frequency), mode=Timer.PERIODIC, callback=step)
 
