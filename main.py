@@ -38,9 +38,6 @@ def disable_motor():
 def set_direction(dir):
   dir_pin.value(dir)
 
-def enabled():
-  return not enable_pin.value()
-
 def rotate_motor(delay):
   # Set up timer for stepping
   frequency = 1000000.0/delay
@@ -75,12 +72,37 @@ def loop():
       utime.sleep_ms(1000)
 
 def constant_move():
-  disable_motor()
-  set_direction(1)
-  frequency = 1000000.0/1400.0
-  tim.init(freq=int(frequency), mode=Timer.PERIODIC, callback=step)
-  utime.sleep(30)
-  tim.deinit()
+  count = 0
+
+  # Initially turn off the motor
+  enable_pin.value(1)
+  while True:
+    if switch_active(enable_switch_pin) and enable_pin.value() == 0:
+        print("Disabling motor")
+        tim.deinit()
+        enable_pin.value(1)
+
+        utime.sleep(2)
+        count = 0
+    elif switch_active(enable_switch_pin) and enable_pin.value() == 1:
+      # set_direction(1)
+      dir_pin.value(1)
+      frequency = 1000000.0/1400.0
+      enable_pin.value(0)
+      tim.init(freq=int(frequency), mode=Timer.PERIODIC, callback=step)
+
+      utime.sleep(2)
+      count += 1
+    else:
+      pass
+    # if count == 0:
+    #   # Enabled the motor
+    # else:
+    #   if switch_active(enable_switch_pin) and enable_pin.value() == 0:
+    #     tim.deinit()
+    #     enable_pin.value(1)
+    #     # disable_motor()
+    #     count = 0
 
 
 if __name__ == '__main__':
