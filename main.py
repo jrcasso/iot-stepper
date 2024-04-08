@@ -73,28 +73,32 @@ def loop():
 
 def constant_move():
   count = 0
-
   # Initially turn off the motor
   enable_pin.value(1)
+
+  # Initial direction set to forward
+  dir_pin.value(1)
   while True:
-    if switch_active(enable_switch_pin) and enable_pin.value() == 0:
+    toggle_switch_activated = switch_active(enable_switch_pin)
+    if toggle_switch_activated:
+      if enable_pin.value() == 0:
         print("Disabling motor")
         tim.deinit()
         enable_pin.value(1)
 
         utime.sleep(2)
         count = 0
-    elif switch_active(enable_switch_pin) and enable_pin.value() == 1:
-      # set_direction(1)
-      dir_pin.value(1)
-      frequency = 1000000.0/1400.0
-      enable_pin.value(0)
-      tim.init(freq=int(frequency), mode=Timer.PERIODIC, callback=step)
+      else:
+        # set_direction(1)
+        print("Activating motor")
+        frequency = 1000000.0/1400.0
+        enable_pin.value(0)
+        tim.init(freq=int(frequency), mode=Timer.PERIODIC, callback=step)
 
-      utime.sleep(2)
-      count += 1
+        utime.sleep(2)
+        count += 1
     else:
-      pass
+      utime.sleep(1)
     # if count == 0:
     #   # Enabled the motor
     # else:
