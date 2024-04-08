@@ -2,8 +2,10 @@ from machine import Pin, Timer
 import utime
  
 led_pin = Pin("LED", Pin.OUT)
-dir_pin = Pin("GPIO0", Pin.OUT)
-step_pin = Pin("GPIO1", Pin.OUT)
+enable_pin = Pin("GPIO12", Pin.OUT)
+enable_switch_pin = Pin("GPIO13", Pin.IN)
+dir_pin = Pin("GPIO14", Pin.OUT)
+step_pin = Pin("GPIO15", Pin.OUT)
 steps_per_revolution = 200
  
 # Initialize timer
@@ -12,36 +14,58 @@ tim = Timer()
 def step(t):
   global step_pin
   step_pin.value(not step_pin.value())
- 
+
+def check_for_active_toggle():
+  print(f"enable_switch {enable_switch_pin.value()}")
+  if enable_switch_pin.value() == 1:
+    print("Changing enablement state")
+    enable_pin.value(not enable_pin.value())
+    utime.sleep(1)
+  print(f"enable {enable_pin.value()}")
+
+
+def enabled():
+  print(f"enabled? {enable_pin.value()}")
+  return not enable_pin.value()
+
 def rotate_motor(delay):
   # Set up timer for stepping
-  tim.init(freq=1000000//delay, mode=Timer.PERIODIC, callback=step)
- 
+  frequency = 1000000.0/delay
+  print(f"Sending pulses every {1.0/frequency} seconds...")
+  tim.init(freq=frequency, mode=Timer.PERIODIC, callback=step)
+
+def rotate_with_speed(steps_per_second):
+  # In steps per second, e.g.:
+  # 20 steps / s * rev / 200 step = 0.1 revs / s = 1/10 hz
+  frequency = steps_per_second * (1.0 / 200.0)
+  print(f"Sending pulses every {1.0/frequency} seconds...")
+  tim.init(freq=frequency, mode=Timer.PERIODIC, callback=step)
+
 def loop():
   counter = 0
+  enable_pin.value(1)
+  dir_pin.value(1)
+  spin = float(input("Enter the rotation step delay: "))
+
   while True:
-    print(f"Moving {counter}")
-    led_pin.value(1)
-    # Set motor direction clockwise
-    dir_pin.value(1)
+    check_for_active_toggle()
+    if enabled():
+      if counter != 0: tim.deinit()
+      led_pin.value(1)
+      # Spin motor quickly
+      # rotate_motor(1000)
+      rotate_motor(spin or 800.0)
+      # utime.sleep_ms(steps_per_revolution)
+      # tim.deinit()  # stop the timer
+      led_pin.value(0)
+      utime.sleep(1)
 
-    # Spin motor slowly
-    rotate_motor(2000)
-    utime.sleep_ms(steps_per_revolution)
-    tim.deinit()  # stop the timer
-    utime.sleep(1)
-
-    # Set motor direction counterclockwise
-    dir_pin.value(0)
-
-    # Spin motor quickly
-    rotate_motor(1000)
-    utime.sleep_ms(steps_per_revolution)
-    tim.deinit()  # stop the timer
-    led_pin.value(0)
-    utime.sleep(1)
-
-    counter += 1
+      counter += 1
+    else:
+      tim.deinit()
+      step_pin.value(0)
+      counter = 0
+      utime.sleep(1)
  
 if __name__ == '__main__':
     loop()
