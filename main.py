@@ -1,6 +1,21 @@
 from machine import Pin, Timer
 import utime
  
+
+# To work with an A4988 driver or any other driver with the same pinout:
+
+# A+ (BLACK) is 1A
+# B+ (GREEN) is 2A
+# A- (BLUE) is 1B
+# B- (RED) is 2B
+
+# So from top to bottom looking down on the A4988 driver board:
+
+# RED (2B)
+# GREEN (2A)
+# BLACK (1A)
+# BLUE (1B)
+
 led_pin = Pin("LED", Pin.OUT)
 enable_switch_pin = Pin("GPIO12", Pin.IN)
 enable_pin = Pin("GPIO13", Pin.OUT)
@@ -13,7 +28,6 @@ tim = Timer()
  
 def step(t):
   global step_pin
-  print("Stepping")
   step_pin.value(not step_pin.value())
 
 def handle_active_toggle():
@@ -78,26 +92,31 @@ def constant_move():
 
   # Initial direction set to forward
   dir_pin.value(int(input("Input direction: ")))
-  delay = float(input("Input step delay: "))
+  # delay = float(input("Input step delay: "))
+  delay = 1550
   while True:
     toggle_switch_activated = switch_active(enable_switch_pin)
     if toggle_switch_activated:
       if enable_pin.value() == 0:
-        print("Disabling motor and changing direction")
         tim.deinit()
+        print("Deactivated stepper.")
         enable_pin.value(1)
+
+        print("Changing direction")
         dir_pin.value(not dir_pin.value())
 
-        utime.sleep(2)
+        utime.sleep(1)
         count = 0
       else:
         # set_direction(1)
-        print("Activating motor")
+        print("Activating stepper")
+        delay = float(input("Input step delay: "))
         frequency = 1000000.0/delay
         enable_pin.value(0)
         tim.init(freq=int(frequency), mode=Timer.PERIODIC, callback=step)
+        print("Stepper activated.")
 
-        utime.sleep(2)
+        utime.sleep(1)
         count += 1
     else:
       utime.sleep(1)
